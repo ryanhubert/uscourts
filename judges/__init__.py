@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Ryan Hübert
+# Assistant Professor
 # Department of Political Science
 # University of California, Davis
 
