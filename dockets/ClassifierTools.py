@@ -13,7 +13,6 @@ Tools for using docket sheet outcome classifiers
 import re
 import os
 from dockets.ParseDocketEntries import ExtractEntries
-from datetime import datetime
 from nltk.stem.snowball import SnowballStemmer
 from nltk import sent_tokenize
 
@@ -23,7 +22,9 @@ from bs4 import BeautifulSoup
 stemmer = SnowballStemmer("english")
 
 abbr = {x.split('\t')[0] : x.split('\t')[1] for x in open(os.path.dirname(os.path.realpath(__file__)) + '/data/shorthand.txt','r').read().split('\n') if 'Source' not in x}
-
+keyphrsS = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_settlement.txt', 'r').read().split('\n')
+keyphrsP = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_prejudice.txt', 'r').read().split('\n')
+clause_breaks = ',;:\n'
 
 def FindDates(html_string):
     """
@@ -51,13 +52,13 @@ def FindDates(html_string):
     filed = [x[1] for x in tables if x[0] in ['date_filed']]
     filed = filed[0] if len(filed) > 0 else ''
     if '/' in filed:
-        filed = datetime.strptime(filed, '%m/%d/%Y').date()
+        filed = datetime.datetime.strptime(filed, '%m/%d/%Y').date()
     else:
         filed = None
     termd = [x[1] for x in tables if x[0] in ['date_terminated']]
     termd = termd[0] if len(termd) > 0 else ''
     if '/' in termd:
-        termd = datetime.strptime(termd, '%m/%d/%Y').date()
+        termd = datetime.datetime.strptime(termd, '%m/%d/%Y').date()
     else:
         termd = None
 

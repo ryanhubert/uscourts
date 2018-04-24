@@ -12,7 +12,10 @@ termination date to code the outcome of the case.
 """
 
 import re
+import os
+from dockets.ClassifierTools import BasicTextFormatter, clause_breaks
 import nltk
+
 from nltk.stem.snowball import SnowballStemmer
 stemmer = SnowballStemmer("english")
 
@@ -26,9 +29,8 @@ stop_words.remove('with')
 
 # Important search terms
 # NB: these words are not used: 'voluntary'
-keyphrsS = ['consent judgment', 'dismissal upon settlement',
-            'notice of settlement', 'settlement order', 'consent decree']
-keyphrsP = ['with prejudice', 'without prejudice', 'proposed order']
+keyphrsS = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_settlement.txt', 'r').read().split('\n')
+keyphrsP = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_prejudice.txt', 'r').read().split('\n')
 keywords = ['transfer', 'remand', 'vacate', 'reverse', 'affirm', 'default', 'habeas',
             'dismissal', 'dismiss', 'settled', 'settlement', 'joint', 'stipulation', 'stipulated',
             'motion', 'summary', 'judgment','grant', 'denial', 'deny',
@@ -37,7 +39,7 @@ keywords = ['transfer', 'remand', 'vacate', 'reverse', 'affirm', 'default', 'hab
             'lack', 'jurisdiction', 'standing', 'stay']
 keywords = [stemmer.stem(re.sub(' ','_',x)) for x in keywords + keyphrsS + keyphrsP]
 keywords = sorted(list(set(keywords)))
-clause_breaks = ',;:\n'
+
 
 settsearch1 = '(' + '|'.join([stemmer.stem(re.sub(' ','_',x)) for x in keyphrsS]) + ')'
 settsearch2 = '(case_settl|settlement|settl|joint|consent|stipul)'
