@@ -1,0 +1,54 @@
+Source: http://www.azd.uscourts.gov/sites/default/files/documents/docket%20abbreviations.pdf	
+agnst	against
+angst	against
+agst	against
+be gr	be granted
+cons	consent
+dflt	default
+defts?	defendant
+dfnts?	defendant
+dfts?	defendant
+den	deny
+dism	dismiss
+dismssl	dismissal
+8th	eighth
+11th	eleventh
+ent	enter
+fvr	favor
+5th	fifth
+1st	first
+4th	fourth
+h/c	habeas corpus
+ifpp?	in forma pauperis
+is gr	is granted
+jgm	judgment
+jdmt	judgment
+jgmt	judgment
+juris	jurisdiction
+mot	motion
+mtns?	motion
+9th	ninth
+ntc	notice
+ord	order
+pet	petition
+petn	petition
+pla	plaintiff
+plfs?	plaintiff
+pltfs?	plaintiff
+prej	prejudice
+prej	prejudice
+2nd	second
+7th	seventh
+6th	sixth
+settlmt	settlement
+settlem	settlement
+stip	stipulation
+s/j	summary judgment
+sum jgm	summary judgment
+summ jdg	summary judgment
+sumjgm	summary judgment
+10th	tenth
+3rd	third
+tran	transfer
+transf	transfer
+trl	trial
