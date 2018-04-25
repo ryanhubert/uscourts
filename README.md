@@ -20,3 +20,10 @@ Planned improvements:
 
 - Tool to generate an easy-to-use `csv` file containing key information about judges' work histories, education, and nominations
 - Add federal magistrate and Article IV judges
+
+[`uscourts.dockets`](/dockets)
+
+Tools for working with docket entries from U.S. federal court cases.
+
+- Parses entries from HTML files
+- Provides dictionary-based classifier to code case outcomes
