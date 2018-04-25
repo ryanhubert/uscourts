@@ -13,7 +13,7 @@ termination date to code the outcome of the case.
 
 import re
 import os
-from dockets.ClassifierTools import BasicTextFormatter, clause_breaks
+from dockets.ClassifierTools import BasicTextFormatter
 import nltk
 
 from nltk.stem.snowball import SnowballStemmer
@@ -27,10 +27,16 @@ stop_words = [stemmer.stem(x) for x in stop_words]
 stop_words.remove('against')
 stop_words.remove('with')
 
+# This sets current path depending on whether in IDE
+try:
+    current_path =  os.path.dirname(os.path.realpath(__file__))
+except:
+    current_path = os.getcwd()
+
 # Important search terms
 # NB: these words are not used: 'voluntary'
-keyphrsS = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_settlement.txt', 'r').read().split('\n')
-keyphrsP = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_prejudice.txt', 'r').read().split('\n')
+keyphrsS = open(current_path +'/data/phrases_settlement.txt', 'r').read().split('\n')
+keyphrsP = open(current_path +'/data/phrases_prejudice.txt', 'r').read().split('\n')
 keywords = ['transfer', 'remand', 'vacate', 'reverse', 'affirm', 'default', 'habeas',
             'dismissal', 'dismiss', 'settled', 'settlement', 'joint', 'stipulation', 'stipulated',
             'motion', 'summary', 'judgment','grant', 'denial', 'deny',
@@ -73,17 +79,14 @@ def CivilOutcomeClassifier(entries, habeas=False):
     :param habeas: bool
     :return: tuple of dict with classifications and cleaned text
     """
+
     outcome = {x: False for x in outvars}
     if entries == {}:
         return (outcome, '')
 
-    entry_list = [entries[x]['entry_text'] for x in entries]
-    # entry_list = "MOTION to Dismiss Plaintiff's Complaint for Failure to Exhaust Her Administrative Remedies by Defendant Doug Porter. Oral Argument Requested. Noting Date 1/6/2012, (Hoover, Catherine) (Entered: 12/09/2011)\n\nMOTION to Dismiss Plaintiff's Complaint for Failure to Exhaust Her Administrative Remedies by Defendant Doug Porter. Oral Argument Requested. Noting Date 1/6/2012, (Hoover, Catherine) (Entered: 12/09/2011)\n\nMOTION to Dismiss by Defendant Molina Healthcare of Washington Inc. (Attachments: # 1 Proposed Order) Noting Date 1/6/2012, (Keehnel, Stellman) (Entered: 12/09/2011)\n\nMOTION to Dismiss by Defendant Molina Healthcare of Washington Inc. (Attachments: # 1 Proposed Order) Noting Date 1/6/2012, (Keehnel, Stellman) (Entered: 12/09/2011)\n\nNOTICE OF ADDITIONAL SUPPLEMENTAL AUTHORITY re 22 Response to Motion, 55 Notice-Other, 23 Response to Motion ; filed by Plaintiff J.E.. (Hamburger, Eleanor) (Entered: 03/26/2012)\n\nORDER DISMISSING WITHOUT PREJUDICE by Judge John C Coughenour; The Court GRANTS Deft Doug Porter's 10 Motion to Dismiss for failure to exhaust administrative remedies and Deft Molina Healthcare of Washington, Inc.'s 15 Motion to Dismiss. (TF) (Entered: 04/11/2012)\n\nJUDGMENT BY COURT; Defendants' motions to dismiss (Dkt. Nos. 10 and 15 ) are GRANTED. This case is DISMISSED WITHOUT PREJUDICE. (TF) (Entered: 04/11/2012)".split('\n\n')
-    # entry_list = [x for x in testjson[k]['full_text'].split('\n\n')]
-
     # Break entries into clauses (useful down below)
     clauses = []
-    for string in entry_list:
+    for string in [entries[x]['entry_text'] for x in entries]:
         # We use "settle" to classify cases as settlement, and this judge's
         # name is causing problems
         string = string.replace('Benjamin H. Settle'.lower(), ' ')
@@ -188,17 +191,16 @@ def CivilOutcomeClassifier(entries, habeas=False):
     mss = []
     for clause in clauses:
         i = '.'.join(clause)
-        # print(i)
-        if re.search('(petit|motion)', i):
-            if ('by_def' in i or re.search('defend\.(motion|petit)', i)):
+        if 'petit' in i or 'motion' in i:
+            i = i.replace('petit','motion')
+            if 'by_def' in i or 'defend.motion' in i:
                 mss.append('defendant/mot_pet')
                 for r in re.findall('(?:grant|deni)', i):
                     mss.append('defendant/mot_pet/' + r)
-            if ('by_pla' in i or re.search('plaintiff\.(motion|petit)', i)) and 'grant' in i:
+            if ('by_pla' in i or 'plaintiff.motion' in i) and 'grant' in i:
                 mss.append('plaintiff/mot_pet')
                 for r in re.findall('(?:grant|deni)', i):
                     mss.append('plaintiff/mot_pet/' + r)
-        # text_merge_i = '.'.join(i)
         if 'summari.judgment' in i and not 'deni' in i:
             outcome['sumjud'] = True
             if 'motion.summari.judgment' in i and ('grant' in i and 'deni' not in i):
@@ -220,16 +222,17 @@ def CivilOutcomeClassifier(entries, habeas=False):
     ## Code directions if a judgment is identified
     ## This is overly inclusive -- will code D and P decisions liberally!
     if outcome['jud'] == True or outcome['sumjud'] == True:
-        if re.search('(favor\.defend|against\.plaintiff)', text_merge):
+        if 'favor.defend' in text_merge or 'against.plaintiff' in text_merge:
             outcome['defendant'] = True
-        if re.search('(favor\.plaintiff|against\.defend)', text_merge):
+        if 'favor.plaintiff' in text_merge or 'against.defend' in text_merge:
             outcome['plaintiff'] = True
-        if re.search('award\.platiff\.damag', text_merge):
+        if 'award.platiff.damag' in text_merge:
             outcome['plaintiff'] = True
-        if re.search('plaintiff\.entitl\.judgment', text_merge):
+        if 'plaintiff.entitl.judgment' in text_merge:
             outcome['plaintiff'] = True
-        if re.search('defend\.entitl\.judgment', text_merge):
+        if 'defend.entitl.judgment' in text_merge:
             outcome['defendant'] = True
 
     outcome['motions_petitions'] = sorted(mss)
+
     return outcome, text_merge

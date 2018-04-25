@@ -21,9 +21,15 @@ from bs4 import BeautifulSoup
 
 stemmer = SnowballStemmer("english")
 
-abbr = {x.split('\t')[0] : x.split('\t')[1] for x in open(os.path.dirname(os.path.realpath(__file__)) + '/data/shorthand.txt','r').read().split('\n') if 'Source' not in x}
-keyphrsS = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_settlement.txt', 'r').read().split('\n')
-keyphrsP = open(os.path.dirname(os.path.realpath(__file__))+'/data/phrases_prejudice.txt', 'r').read().split('\n')
+# This sets current path depending on whether in IDE
+try:
+    current_path =  os.path.dirname(os.path.realpath(__file__))
+except:
+    current_path = os.getcwd()
+
+abbr = {x.split('\t')[0] : x.split('\t')[1] for x in open(current_path + '/data/shorthand.txt','r').read().split('\n') if 'Source' not in x}
+keyphrsS = open(current_path+'/data/phrases_settlement.txt', 'r').read().split('\n')
+keyphrsP = open(current_path+'/data/phrases_prejudice.txt', 'r').read().split('\n')
 clause_breaks = ',;:\n'
 
 def FindDates(html_string):
@@ -66,8 +72,10 @@ def FindDates(html_string):
 
 def BasicTextFormatter(string):
     """
-    Takes a raw string (e.g., entry from docket sheet) and does some
-    preprocessing to standardize the text.
+    Takes a raw string (e.g., entry from docket sheet) and does some preprocessing to standardize the text.
+    This is designed to work with the dictionary-based classifier of civil outcomes.
+    :param string: str of docket text
+    :return: list of str, each representing a clause in string with processed text
     """
 
     i = string.lower()
@@ -92,6 +100,7 @@ def BasicTextFormatter(string):
     # Replace shorthand phrases (using list of abbreviations)
     i = i.replace('&', ' and ')
     i = i.replace(' w/ ', ' with ')
+    i = i.replace(' w/p', ' with p')
     i = i.replace(' w/o ', ' without ')
     i = i.replace(' w/out ', ' without ')
     i = i.replace(' w/ out ', ' without ')
@@ -124,8 +133,10 @@ def BasicTextFormatter(string):
     # Final clean-up
     i = re.sub('(^| )[^a-z' + clause_breaks + ']{2,}($| )', '\\1 \\2', i)
     i = ' '.join(i.split())
-    i = re.sub(' plaintiffs?_s ', ' plaintiff ', i)
-    i = re.sub(' defendants?_s ', ' defendant ', i)
+    i = i.replace('plaintiffs_s ','plaintiff ')
+    i = i.replace('plaintiff_s ', 'plaintiff ')
+    i = i.replace('defendants_s ', 'defendant ')
+    i = i.replace('defendant_s ', 'defendant ')
 
     i = re.sub(' ([,\.;:_])', '\\1', i)
     sentences = [x if x[-1] != '.' else x[:-1] for x in sent_tokenize(i)]
