@@ -27,3 +27,11 @@ Tools for working with docket entries from U.S. federal court cases.
 
 - Parses entries from HTML files
 - Provides dictionary-based classifier to code case outcomes
+
+
+[`uscourts.litigants`](/litigants)
+
+Tools for working with data on litigants in U.S. federal court cases, including both parties and their attorneys.
+
+- Identifies party names, types (e.g., plaintiff or defendant), and their attorneys from HTML-formatted CM/ECF docket sheets (from PACER)
+- Provides a dictionary-based (i.e., "dumb") classifier for categorizing litigants into several pre-defined categories. [Read more](/litigants/CODEBOOK.md).

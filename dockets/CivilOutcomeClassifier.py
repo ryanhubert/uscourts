@@ -6,26 +6,15 @@
 # University of California, Davis
 
 """
-dockets.CivilOutcomeClassifier v1.0
+dockets.CivilOutcomeClassifier v1.1
 A dictionary-based classifier that uses text of docket entries on or near a case
 termination date to code the outcome of the case.
 """
 
 import re
 import os
-from dockets.ClassifierTools import BasicTextFormatter
-import nltk
-
 from nltk.stem.snowball import SnowballStemmer
 stemmer = SnowballStemmer("english")
-
-# Text Tools
-stemmer = SnowballStemmer("english")
-
-stop_words = nltk.corpus.stopwords.words('english')
-stop_words = [stemmer.stem(x) for x in stop_words]
-stop_words.remove('against')
-stop_words.remove('with')
 
 # This sets current path depending on whether in IDE
 try:
@@ -33,8 +22,19 @@ try:
 except:
     current_path = os.getcwd()
 
+# Text Tools
+stemmer = SnowballStemmer("english")
+
+# We do not use this. Preserving for future consideration.
+# from nltk.corpus import stopwords
+# stop_words = stopwords.words('english')
+# stop_words = [stemmer.stem(x) for x in stop_words]
+# stop_words.remove('against')
+# stop_words.remove('with')
+
 # Important search terms
 # NB: these words are not used: 'voluntary'
+abbr = {x.split('\t')[0] : x.split('\t')[1] for x in open(current_path + '/data/shorthand.txt','r').read().split('\n') if 'Source' not in x}
 keyphrsS = open(current_path +'/data/phrases_settlement.txt', 'r').read().split('\n')
 keyphrsP = open(current_path +'/data/phrases_prejudice.txt', 'r').read().split('\n')
 keywords = ['transfer', 'remand', 'vacate', 'reverse', 'affirm', 'default', 'habeas',
@@ -45,6 +45,7 @@ keywords = ['transfer', 'remand', 'vacate', 'reverse', 'affirm', 'default', 'hab
             'lack', 'jurisdiction', 'standing', 'stay']
 keywords = [stemmer.stem(re.sub(' ','_',x)) for x in keywords + keyphrsS + keyphrsP]
 keywords = sorted(list(set(keywords)))
+clause_breaks = ',;:\n'
 
 
 settsearch1 = '(' + '|'.join([stemmer.stem(re.sub(' ','_',x)) for x in keyphrsS]) + ')'
@@ -70,6 +71,81 @@ outvars = ['forma_pauperis',
             'defendant',
             'plaintiff',
             'motions_petitions']
+
+def BasicTextFormatter(string):
+    """
+    Takes a raw string (e.g., entry from docket sheet) and does some preprocessing to standardize the text.
+    This is designed to work with the dictionary-based classifier of civil outcomes.
+    :param string: str of docket text
+    :return: list of str, each representing a clause in string with processed text
+    """
+
+    i = string.lower()
+
+    # Remove parenthetical and bracketed statements
+    i = re.sub('\([^\)]*\)', ' ', i)
+    i = re.sub('\[[^\]]*\]', ' ', i)
+
+    # Remove any token NOT containint
+    i = ' '.join(i.replace('\n\n', '. ').split())
+
+    # Standardize possessives and apostrophes
+    i = i.replace("'s ", " _s ")
+    i = i.replace("s' ", "s _s ")
+
+    # Standardize party names
+    ## Respondent -> Defendant
+    ## Petitioner -> Plaintiff
+    i = i.replace(' respondent', ' defendant')
+    i = i.replace(' petitioner', ' plaintiff')
+
+    # Replace shorthand phrases (using list of abbreviations)
+    i = i.replace('&', ' and ')
+    i = i.replace(' w/ ', ' with ')
+    i = i.replace(' w/p', ' with p')
+    i = i.replace(' w/o ', ' without ')
+    i = i.replace(' w/out ', ' without ')
+    i = i.replace(' w/ out ', ' without ')
+
+    for s in abbr:
+        i = re.sub('(^|[^A-z])' + s + '($|[^A-z])', '\\1' + abbr[s] + '\\2', i)
+    i = i.replace(' is gr ', ' is granted ')
+
+    i = i.replace(" _s ", "_s ")
+
+    ## Clean up motions
+    i = re.sub(' (petitions?|motions?) (?:for|to) ([^ ]+) ', ' \\1 \\2 ', i)
+    i = re.sub(' (def|pla)(?:endant|intiff)s?(?:_s)? (petitions?|motions?)', ' by_\\1 \\2 ', i)
+    i = re.sub(' (?:by|filed by) (?:the )?(def|pla)(?:endant|intiff)s? ', ' by_\\1 ', i)
+
+    # Retain some key phrases when tokenizing
+    for s in keyphrsS + keyphrsP:
+        i = i.replace(s, s.replace(' ', '_'))
+    i = i.replace(' r and r ', ' r_r ')
+    i = i.replace(' report and recommendations ', ' r_r ')
+    i = i.replace(' report and recommendation ', ' r_r ')
+
+    # Remove "stipulation and order"
+    i = i.replace(' stipulation and order ', ' order ')
+
+    # Clean up judgment directions
+    i = re.sub('judgment for (?:all )?(def|pla)', 'judgment in favor of \\1', i)
+    i = re.sub('judgment (?:is )?granted +(?:for|to) +(?:all +)?(def|pla)', 'judgment in favor of \\1', i)
+
+    # Final clean-up
+    i = re.sub('(^| )[^a-z' + clause_breaks + ']{2,}($| )', '\\1 \\2', i)
+    i = ' '.join(i.split())
+    i = i.replace('plaintiffs_s ','plaintiff ')
+    i = i.replace('plaintiff_s ', 'plaintiff ')
+    i = i.replace('defendants_s ', 'defendant ')
+    i = i.replace('defendant_s ', 'defendant ')
+
+    i = re.sub(' ([,\.;:_])', '\\1', i)
+    sentences = [x if x[-1] != '.' else x[:-1] for x in sent_tokenize(i)]
+    clauses = [[x for x in re.split('[' + clause_breaks + ']', y) if any(z.islower() for z in x)] for y in sentences]
+    clauses = [[' '.join(re.sub('[^_a-z]', ' ', y).split()) for y in x] for x in clauses]
+
+    return clauses
 
 def CivilOutcomeClassifier(entries, habeas=False):
     """
