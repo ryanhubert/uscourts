@@ -14,6 +14,7 @@ termination date to code the outcome of the case.
 import re
 import os
 from nltk.stem.snowball import SnowballStemmer
+from nltk import sent_tokenize
 stemmer = SnowballStemmer("english")
 
 # This sets current path depending on whether in IDE
