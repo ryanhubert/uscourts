@@ -6,7 +6,7 @@
 # University of California, Davis
 
 """
-dockets.CivilOutcomeClassifier v1.1
+dockets.CivilDictionaryClassifier v1.1
 A dictionary-based classifier that uses text of docket entries on or near a case
 termination date to code the outcome of the case.
 """
