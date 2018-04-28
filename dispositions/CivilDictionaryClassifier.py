@@ -149,7 +149,7 @@ def BasicTextFormatter(string):
 
     return clauses
 
-def CivilOutcomeClassifier(entries, habeas=False):
+def Classify(entries, habeas=False):
     """
     Take a set of docket entries (for civil cases) and use dictionary methods to
     classify the case outcome(s) using categories in outvars

@@ -12,4 +12,4 @@ import sys
 current_path = os.path.dirname(os.path.abspath( __file__ ))
 sys.path.append(current_path)
 
-from dockets import CivilDictionaryClassifier
+from dispositions import CivilDictionaryClassifier
