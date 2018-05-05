@@ -7,8 +7,8 @@
 
 """
 judges.LoadData v2.0
-This script takes the Federal Judicial Center's Biographical Directory of 
-Article III Federal Judges and generates a json file formatted for easy 
+This script takes the Federal Judicial Center's Biographical Directory of
+Article III Federal Judges and generates a json file formatted for easy
 import/use in other federal courts-related research applications.
 
 New in v2.0: function to reshape (and shrink) data for use in other applications
@@ -57,8 +57,8 @@ def LoadData(directory=os.getcwd()):
     else:
         raise Exception("No data loaded!")
 
-def ReshapeData(dictionary, directory=os.getcwd(), other_judges=False):
-    smap = [s.lower().split('\t') for s in open(directory + '/data/states.txt').read().split('\n')]
+def ReshapeData(dictionary, other_judges=False):
+    smap = [s.lower().split('\t') for s in open(os.path.dirname(os.path.realpath(__file__)) + '/data/states.txt').read().split('\n')]
     smap = sorted(smap, key=lambda x: len(x[1]), reverse=True)
 
     cmap = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5,

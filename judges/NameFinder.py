@@ -68,7 +68,7 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
     ## Catch mistakes of form "JohnRoberts" -- NB: would incorrectly split DellaVigna into Della Vigna
     string = re.sub("([a-z]{3,})([A-Z])","\\1 \\2",string)
     ## Remove all irrelevant characters
-    string = re.sub("[^ A-Za-z\']","",string)
+    string = re.sub("[^ A-Za-z\']"," ",string)
 
     # Tokenize
     tokens = [x.upper() for x in string.split()]
