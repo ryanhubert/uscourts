@@ -151,3 +151,12 @@ def WhichCourt(date, reshaped_dict, fjc_id, use_closest = False):
         return [x for x in djcourts if x[5]][0][1], [x for x in djcourts if x[5]][0][2]
 
 
+def LNSearch(string, dictionary, ids_only = False):
+    found = []
+    for k in dictionary:
+        if dictionary[k]["Last Name"].lower().strip() == string.lower().strip():
+            found.append(k)
+    if ids_only:
+        return sorted(list(set(found)))
+    else:
+        return {x:dictionary[x] for x in found}
