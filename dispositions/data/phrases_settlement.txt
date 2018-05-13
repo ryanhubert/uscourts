@@ -3,3 +3,4 @@ dismissal upon settlement
 notice of settlement
 settlement order
 consent decree
+case settled
