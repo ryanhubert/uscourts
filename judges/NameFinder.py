@@ -6,7 +6,7 @@
 # University of California, Davis
 
 """
-Judges.NameFinder v2.0
+judges.NameFinder v3.1
 A function to identify names from a list of names appearing in unstructured text.
 Optimized for use with federal judicial biographical data.
 """
@@ -18,7 +18,7 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
                easy_output=False):
     """
     ===============
-    NameFinder v2.0
+    NameFinder v3.1
     ===============
     Since v1.0:
         - Bug fixes. For example, fixes problem parsing names written in ALL CAPS.
@@ -27,6 +27,12 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
         - Returns a dict object with matches plus original string
           (modified to clean up formatting) with matched names tagged [BETA]
         - An option to return a list of IDs matched
+    Since v2.0:
+        - Additional documentation/comments
+        - Allow matches for people who go by their middle names
+        - Bug fix. Improper indentation.
+    Since v3.0:
+        - Allow user to specify which level of match they want
     ===============
     Options
         namedict:
@@ -74,6 +80,7 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
     tokens = [x.upper() for x in string.split()]
 
     # Identify all potential names in the string
+    # This identifies all the last names from the name_dict that appear in the string
     allnames = {}
     for k in subset:
         ln = namedict[k][namekeys[2]].upper().strip().replace("."," ").replace('-',' ').replace('`',"'").split()
@@ -86,6 +93,7 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
                 allnames[n] = [k]
 
     # Match all the potential names to ID numbers from namedict
+    # This iterates through all the potential matches to rule out the "bad" ones
     allmatches = {x : [] for x in allnames}
     for a in allnames:
         for k in allnames[a]:
@@ -108,8 +116,13 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
                 em, matched_text = 1, ' '.join([""] + fn + mi + ln + [""])
             elif ' '.join([""] + fi + mn + ln + [""]) in n:
                 em, matched_text = 1, ' '.join([""] + fi + mn + ln + [""])
-            elif fn != [] and ' '.join([""] + fn + ln + [""]) in n:
+            elif fn != [] and len(fn[0]) > 1 and ' '.join([""] + fn + ln + [""]) in n:
                 em, matched_text = 2, ' '.join([""] + fn + ln + [""])
+            # Added this 2018-05-23 to catch judges who only go by their
+            # middle names. For example, Jerome Farris of the Ninth Circuit
+            elif mn != [] and len(mn[0]) > 1 and ' '.join([""] + mn + ln + [""]) in n:
+                em, matched_text = 2, ' '.join([""] + mn + ln + [""])
+
             elif ' '.join([""] + fi + mi + ln + [""]) in n:
                 em, matched_text = 3, ' '.join([""] + fi + mi + ln + [""])
             elif fn != [] and  ' '.join([""] + fi + ln + [""]) in n:
@@ -123,16 +136,16 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
 
 
             else: #Stragglers
-                orig = ' '+ ' '.join([x for x in n.replace(' '.join(ln),'').split()] + ln) + ' '
-                mod = ' '+ ' '.join([x[0] for x in n.replace(' '.join(ln),'').split()] + ln) + ' '
+                orig = ' ' + ' '.join([x for x in n.replace(' '.join(ln), '').split()] + ln) + ' '
+                mod = ' ' + ' '.join([x[0] for x in n.replace(' '.join(ln), '').split()] + ln) + ' '
                 if ' '.join([""] + fi + mi + ln + [""]) == mod:
-                    em, matched_text = 9, orig
+                    em, matched_text = 3, orig
                 elif ' '.join([""] + fi + ln + [""]) == mod:
-                    em, matched_text = 10, orig
+                    em, matched_text = 5, orig
                 else:
                     em, matched_text = 99, ""
 
-            if (em > 2 and em < 7) or em > 10:
+            if (em > 3 and em < 7) or em > 10:
                 # Performs some regex searches to catch special cases:
                 # (1) namedict's info is less robust than the string,
                 # eg, finding "Barbara L. Major" in "Barbara Lynn Major"
@@ -152,40 +165,43 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
             if em < 11:
                 allmatches[a].append((em,k,"FJC Name: " + dict_name,matched_text.strip()))
 
-    if matches == 'exact':
-        allmatches = {x : [y for y in allmatches[x] if y[0] <= 2] for x in allmatches if allmatches[x] != []}
-    elif matches == 'best':
-        allmatches = {x : [y for y in allmatches[x] if y[0] == min([z[0] for z in allmatches[x]])] for x in allmatches if allmatches[x] != []}
+    # Return matches based on criteria selected in arguments
+    if matches == 'exact' or matches == 'best':
+        allmatches = {x : [y for y in allmatches[x] if y[0] <= 4] for x in allmatches if allmatches[x] != []}
+        if matches == 'best':
+            allmatches = {x: [y for y in allmatches[x] if y[0] == min([z[0] for z in allmatches[x]])] for x in
+                          allmatches if allmatches[x] != []}
+    elif matches in [x for x in range(0,11)] + [str(x) for x in range(0,11)]:
+        allmatches = {x : [y for y in allmatches[x] if y[0] <= int(matches)] for x in allmatches if allmatches[x] != []}
 
-        # Consistency checks: make sure that text in string aren't being
-        # "tagged" with more than one person's name from namedict
-        toremove = set()
-        for a in allmatches:
-            for a1 in allmatches:
-                if len(a) < len(a1) and a in a1:
-                    if allmatches[a] == allmatches[a1]:
-                        toremove.add(a1)
-        for r in toremove: del allmatches[r]
+    # Consistency check: make sure that text in string aren't being
+    # "tagged" with more than one person's name from namedict
+    toremove = set()
+    for a in allmatches:
+        for a1 in allmatches:
+            if len(a) < len(a1) and a in a1:
+                if allmatches[a] == allmatches[a1]:
+                    toremove.add(a1)
+    for r in toremove: del allmatches[r]
 
-        tosave = list()
-        TOKSTRING = ' '.join(tokens)
-        for a in sorted([(y[3],x) for x in allmatches for y in allmatches[x]],key=lambda z: len(z[0]),reverse=True):
-            pass
-            if a[0] in TOKSTRING:
-                TOKSTRING = TOKSTRING.replace(a[0],'')
-                tosave.append(a[1])
-        allmatches = {x:allmatches[x] for x in allmatches if x in tosave}
+    tosave = list()
+    TOKSTRING = ' '.join(tokens)
+    for a in sorted([(y[3],x) for x in allmatches for y in allmatches[x]],key=lambda z: len(z[0]),reverse=True):
+       if a[0] in TOKSTRING:
+           TOKSTRING = TOKSTRING.replace(a[0],'')
+           tosave.append(a[1])
+    allmatches = {x:allmatches[x] for x in allmatches if x in tosave}
 
-        ## Reformat objects returned
-        tokens = ' '.join(tokens)
-        c = 0
-        if allmatches != {}:
-            for a in sorted([(y[3],x,y[1]) for x in allmatches for y in allmatches[x]],key=lambda z: len(z[0]),reverse=True):
-                c += 1
-                tokens = tokens.replace(a[0],'['+a[2]+']')
-                if a[1] in allmatches:
-                    allmatches[c] = allmatches[a[1]]
-                    del allmatches[a[1]]
+    ## Reformat objects returned
+    tokens = ' '.join(tokens)
+    c = 0
+    if allmatches != {}:
+        for a in sorted([(y[3],x,y[1]) for x in allmatches for y in allmatches[x]],key=lambda z: len(z[0]),reverse=True):
+            c += 1
+            tokens = tokens.replace(a[0],'['+a[2]+']')
+            if a[1] in allmatches:
+                allmatches[c] = allmatches[a[1]]
+                del allmatches[a[1]]
 
     if easy_output == False:
         return (allmatches, tokens)
