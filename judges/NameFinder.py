@@ -6,7 +6,7 @@
 # University of California, Davis
 
 """
-judges.NameFinder v3.1
+judges.NameFinder v3.2
 A function to identify names from a list of names appearing in unstructured text.
 Optimized for use with federal judicial biographical data.
 """
@@ -18,7 +18,7 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
                easy_output=False):
     """
     ===============
-    NameFinder v3.1
+    NameFinder v3.2
     ===============
     Since v1.0:
         - Bug fixes. For example, fixes problem parsing names written in ALL CAPS.
@@ -33,6 +33,9 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
         - Bug fix. Improper indentation.
     Since v3.0:
         - Allow user to specify which level of match they want
+    Since v3.1:
+        - Allow user to specify an inclusive "best" match that returns the best
+          match regardless of how good it is.
     ===============
     Options
         namedict:
@@ -51,9 +54,9 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
             [type tuple] A 3-tuple indicating the names of the keys in each
             namedict nested dict that correspond to first, middle and last names.
         matches:
-            an element from ['all','best','exact'] indicating whether
-            all, best or exact matches should be returned for each name in
-            the string
+            an element from ['all','best','best_inclusive','exact'] indicating
+            whether all, best (exclusive), best (inclusive) or exact matches
+            should be returned for each name in the string
         easy_output:
             only return a list of IDs matched (even if duplicates); supress
             all additional information and diagnostics
@@ -171,6 +174,11 @@ def NameFinder(namedict, string, subset=None, matches = 'all',
         if matches == 'best':
             allmatches = {x: [y for y in allmatches[x] if y[0] == min([z[0] for z in allmatches[x]])] for x in
                           allmatches if allmatches[x] != []}
+
+    elif matches == 'best_inclusive':
+        allmatches = {x: allmatches[x] for x in allmatches if allmatches[x] != []}
+        allmatches = {x: [y for y in allmatches[x] if y[0] == min([z[0] for z in allmatches[x]])] for x in
+                      allmatches if allmatches[x] != []}
     elif matches in [x for x in range(0,11)] + [str(x) for x in range(0,11)]:
         allmatches = {x : [y for y in allmatches[x] if y[0] <= int(matches)] for x in allmatches if allmatches[x] != []}
 
